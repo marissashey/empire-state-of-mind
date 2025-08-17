@@ -1,0 +1,37 @@
+# data files
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# environment
+.env
+venv/
+env/
+.venv/
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ide
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# logs
+*.log
+logs/
+
+# temp files
+*.tmp
+temp/

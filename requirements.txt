@@ -1,0 +1,37 @@
+# core data
+pandas==2.1.4
+numpy==1.26.2
+requests==2.31.0
+
+# database and storage
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+
+# visualization
+plotly==5.18.0
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# dashboard
+streamlit==1.29.0
+
+# data fetching and apis
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# nlp for sentiment analysis
+textblob==0.17.1
+nltk==3.8.1
+
+# weather data
+pyowm==3.3.0
+
+# scheduling and automation
+schedule==1.2.0
+
+# utilities
+python-dotenv==1.0.0
+tqdm==4.66.1
+
+# testing
+pytest==7.4.3
