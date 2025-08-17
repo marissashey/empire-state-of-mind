@@ -35,3 +35,8 @@ logs/
 # temp files
 *.tmp
 temp/
+
+# logs
+*.log
+logs/*.log
+!logs/.gitkeep
