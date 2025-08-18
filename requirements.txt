@@ -1,37 +1,59 @@
-# core data
+# requirements.txt for empire-state-of-mind
+# nyc data pipeline and visualization project
+
+# === core data processing ===
 pandas==2.1.4
 numpy==1.26.2
 requests==2.31.0
+pyarrow==21.0.0  # parquet file support
 
-# database and storage
+# === database ===
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 
-# visualization
-plotly==5.18.0
+# === jupyter notebooks ===
+jupyter==1.1.1
+notebook==7.4.5
+ipywidgets==8.1.7
+jupyterlab==4.4.6
+
+# === visualization - general ===
 matplotlib==3.8.2
 seaborn==0.13.0
+plotly==5.18.0
 
-# dashboard
+# === visualization - maps ===
+folium==0.20.0  # interactive leaflet maps
+geopandas==1.1.1  # spatial data manipulation
+contextily==1.6.2  # basemap tiles
+rasterio==1.4.3  # raster data (for nasa black marble)
+shapely==2.1.1  # geometric operations
+pyproj==3.7.2  # map projections
+
+# === dashboard ===
 streamlit==1.29.0
+pydeck==0.9.1  # deck.gl for streamlit
 
-# data fetching and apis
+# === nlp (sentiment analysis) ===
+nltk==3.8.1
+textblob==0.17.1
+
+# === weather api ===
+pyowm==3.3.0
+
+# === web scraping ===
 beautifulsoup4==4.12.2
 lxml==4.9.3
 
-# nlp for sentiment analysis
-textblob==0.17.1
-nltk==3.8.1
+# === utilities ===
+python-dotenv==1.0.0  # environment variables
+tqdm==4.66.1  # progress bars
+schedule==1.2.0  # task scheduling
+geopy==2.4.1  # geocoding
 
-# weather data
-pyowm==3.3.0
-
-# scheduling and automation
-schedule==1.2.0
-
-# utilities
-python-dotenv==1.0.0
-tqdm==4.66.1
-
-# testing
+# === testing ===
 pytest==7.4.3
+
+# === data quality ===
+scipy==1.16.1  # statistical functions
+statsmodels==0.14.5  # time series analysis

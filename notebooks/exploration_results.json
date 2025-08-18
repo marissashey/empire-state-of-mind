@@ -1,0 +1,106 @@
+{
+  "total_records": 2000,
+  "columns": [
+    "transit_timestamp",
+    "transit_mode",
+    "station_complex_id",
+    "station_complex",
+    "borough",
+    "payment_method",
+    "fare_class_category",
+    "ridership",
+    "transfers",
+    "latitude",
+    "longitude",
+    "georeference",
+    "hour",
+    "day"
+  ],
+  "unique_stations": 415,
+  "sample_record": {
+    "transit_timestamp": "2024-01-07T23:00:00.000",
+    "transit_mode": "subway",
+    "station_complex_id": "17",
+    "station_complex": "Prince St (R,W)",
+    "borough": "Manhattan",
+    "payment_method": "metrocard",
+    "fare_class_category": "Metrocard - Other",
+    "ridership": "1.0",
+    "transfers": "0.0",
+    "latitude": "40.72433",
+    "longitude": "-73.9977",
+    "georeference": {
+      "type": "Point",
+      "coordinates": [
+        -73.9977,
+        40.72433
+      ]
+    }
+  },
+  "most_alive_stations": {
+    "mean": {
+      "34 St-Penn Station (A,C,E)": 67.66666666666667,
+      "8 St-NYU (R,W)": 17.285714285714285,
+      "50 St (C,E)": 35.166666666666664,
+      "Lorimer St (L)/Metropolitan Av (G)": 34.0,
+      "34 St-Herald Sq (B,D,F,M,N,Q,R,W)": 104.0,
+      "DeKalb Av (B,Q,R)": 10.857142857142858,
+      "Morgan Av (L)": 10.5,
+      "116 St (C,B)": 6.2,
+      "Marcy Av (M,J,Z)": 13.0,
+      "36 St (M,R)": 6.0
+    },
+    "std": {
+      "34 St-Penn Station (A,C,E)": 119.2644121270046,
+      "8 St-NYU (R,W)": 29.544961700851157,
+      "50 St (C,E)": 58.98954709663964,
+      "Lorimer St (L)/Metropolitan Av (G)": 55.65968020030299,
+      "34 St-Herald Sq (B,D,F,M,N,Q,R,W)": 169.99294102991453,
+      "DeKalb Av (B,Q,R)": 17.506461392188612,
+      "Morgan Av (L)": 16.92040188648012,
+      "116 St (C,B)": 9.959919678390985,
+      "Marcy Av (M,J,Z)": 20.75572210259137,
+      "36 St (M,R)": 9.345230512584124
+    },
+    "max": {
+      "34 St-Penn Station (A,C,E)": 379.0,
+      "8 St-NYU (R,W)": 83.0,
+      "50 St (C,E)": 154.0,
+      "Lorimer St (L)/Metropolitan Av (G)": 133.0,
+      "34 St-Herald Sq (B,D,F,M,N,Q,R,W)": 438.0,
+      "DeKalb Av (B,Q,R)": 50.0,
+      "Morgan Av (L)": 45.0,
+      "116 St (C,B)": 24.0,
+      "Marcy Av (M,J,Z)": 55.0,
+      "36 St (M,R)": 20.0
+    },
+    "min": {
+      "34 St-Penn Station (A,C,E)": 2.0,
+      "8 St-NYU (R,W)": 1.0,
+      "50 St (C,E)": 1.0,
+      "Lorimer St (L)/Metropolitan Av (G)": 4.0,
+      "34 St-Herald Sq (B,D,F,M,N,Q,R,W)": 1.0,
+      "DeKalb Av (B,Q,R)": 1.0,
+      "Morgan Av (L)": 3.0,
+      "116 St (C,B)": 1.0,
+      "Marcy Av (M,J,Z)": 1.0,
+      "36 St (M,R)": 1.0
+    },
+    "variance_ratio": {
+      "34 St-Penn Station (A,C,E)": 1.7625282580345507,
+      "8 St-NYU (R,W)": 1.7092126603798192,
+      "50 St (C,E)": 1.677427879525298,
+      "Lorimer St (L)/Metropolitan Av (G)": 1.6370494176559702,
+      "34 St-Herald Sq (B,D,F,M,N,Q,R,W)": 1.6345475099030244,
+      "DeKalb Av (B,Q,R)": 1.6124372334910564,
+      "Morgan Av (L)": 1.61146684633144,
+      "116 St (C,B)": 1.6064386578049976,
+      "Marcy Av (M,J,Z)": 1.5965940078916439,
+      "36 St (M,R)": 1.5575384187640207
+    }
+  },
+  "date_range": {
+    "min": "2024-01-07 23:00:00",
+    "max": "2024-01-07 23:00:00"
+  }
+}
