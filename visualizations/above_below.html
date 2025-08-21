@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>NYC Above/Below - Seasonal Flow</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+
+      #particles-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .control-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 15px;
+        border-radius: 5px;
+        width: 250px;
+        z-index: 100;
+      }
+
+      h3 {
+        margin: 0 0 10px 0;
+      }
+
+      .month-display {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+
+      .weather-display {
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 3px;
+        margin: 10px 0;
+      }
+
+      .stats {
+        font-size: 12px;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 5px 10px;
+        margin: 5px;
+        cursor: pointer;
+      }
+
+      input[type='range'] {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <div class="control-panel">
+      <h3>NYC Transit Seasons</h3>
+
+      <div class="month-display" id="month-display">January 2024</div>
+
+      <input type="range" id="month-slider" min="0" max="11" value="0" step="1" />
+
+      <div>
+        <button id="play-btn">▶ Play Year</button>
+        <button id="pause-btn">⏸ Pause</button>
+      </div>
+
+      <div class="weather-display">
+        <strong>Weather:</strong>
+        <div id="weather-info">Clear, 32°F</div>
+      </div>
+
+      <div class="stats">
+        <div id="subway-active">Subway Activity: 0%</div>
+        <div id="bike-active">Bike Activity: 0%</div>
+        <div id="particle-count">Active Flows: 0</div>
+      </div>
+    </div>
+
+    <script>
+      mapboxgl.accessToken =
+        'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+
+      class NYCSeasonalFlow {
+        constructor() {
+          this.currentMonth = 0;
+          this.isPlaying = false;
+          this.particles = [];
+          this.stations = {
+            subway: [],
+            citibike: [],
+          };
+
+          // monthly weather patterns (simplified)
+          this.weather = [
+            { month: 'January', temp: 32, rain: 0.1, snow: 0.3 },
+            { month: 'February', temp: 35, rain: 0.1, snow: 0.2 },
+            { month: 'March', temp: 45, rain: 0.2, snow: 0.1 },
+            { month: 'April', temp: 55, rain: 0.3, snow: 0 },
+            { month: 'May', temp: 65, rain: 0.3, snow: 0 },
+            { month: 'June', temp: 75, rain: 0.3, snow: 0 },
+            { month: 'July', temp: 82, rain: 0.2, snow: 0 },
+            { month: 'August', temp: 80, rain: 0.2, snow: 0 },
+            { month: 'September', temp: 70, rain: 0.2, snow: 0 },
+            { month: 'October', temp: 58, rain: 0.2, snow: 0 },
+            { month: 'November', temp: 45, rain: 0.2, snow: 0.05 },
+            { month: 'December', temp: 35, rain: 0.15, snow: 0.2 },
+          ];
+
+          this.init();
+        }
+
+        async init() {
+          // setup map
+          this.map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: [-73.98, 40.75],
+            zoom: 11.5,
+          });
+
+          this.map.on('load', () => {
+            this.loadStations();
+            this.setupCanvas();
+            this.bindControls();
+            this.updateMonth();
+          });
+        }
+
+        loadStations() {
+          // create subway stations (major hubs)
+          const subwayData = [
+            { name: 'Times Sq', lat: 40.758, lon: -73.9855, type: 'tourist' },
+            { name: 'Grand Central', lat: 40.7527, lon: -73.9772, type: 'commuter' },
+            { name: 'Union Sq', lat: 40.7359, lon: -73.9927, type: 'mixed' },
+            { name: 'Penn Station', lat: 40.7506, lon: -73.9935, type: 'commuter' },
+            { name: 'Wall St', lat: 40.7074, lon: -74.0113, type: 'financial' },
+            { name: 'Atlantic Av', lat: 40.6842, lon: -73.9766, type: 'residential' },
+            { name: 'Columbus Circle', lat: 40.768, lon: -73.9819, type: 'mixed' },
+            { name: 'Herald Sq', lat: 40.7505, lon: -73.9877, type: 'shopping' },
+            { name: 'Fulton St', lat: 40.7103, lon: -74.0095, type: 'financial' },
+            { name: 'Jay St', lat: 40.6927, lon: -73.9874, type: 'residential' },
+          ];
+
+          // store with activity patterns
+          this.stations.subway = subwayData.map((s) => ({
+            ...s,
+            baseActivity: 0.5,
+            currentActivity: 0.5,
+          }));
+
+          // create citibike stations with neighborhood types
+          for (let i = 0; i < 200; i++) {
+            const lat = 40.7 + Math.random() * 0.1;
+            const lon = -74.02 + Math.random() * 0.08;
+
+            // assign type based on location
+            let type = 'residential';
+            if (lat > 40.75 && lon > -73.99) type = 'midtown';
+            if (lat < 40.71 && lon < -74.0) type = 'financial';
+            if (Math.random() > 0.7) type = 'park';
+
+            this.stations.citibike.push({
+              id: `bike_${i}`,
+              lat: lat,
+              lon: lon,
+              type: type,
+              baseActivity: Math.random() * 0.3,
+              currentActivity: 0,
+            });
+          }
+
+          // add stations to map
+          this.addStationsToMap();
+        }
+
+        addStationsToMap() {
+          // subway stations
+          const subwayGeoJSON = {
+            type: 'FeatureCollection',
+            features: this.stations.subway.map((s) => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [s.lon, s.lat],
+              },
+              properties: {
+                name: s.name,
+                type: s.type,
+              },
+            })),
+          };
+
+          this.map.addSource('subway', {
+            type: 'geojson',
+            data: subwayGeoJSON,
+          });
+
+          this.map.addLayer({
+            id: 'subway-stations',
+            type: 'circle',
+            source: 'subway',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': '#9b59b6',
+              'circle-opacity': 0.8,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#fff',
+            },
+          });
+
+          // citibike stations
+          const bikeGeoJSON = {
+            type: 'FeatureCollection',
+            features: this.stations.citibike.map((s) => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [s.lon, s.lat],
+              },
+              properties: {
+                type: s.type,
+              },
+            })),
+          };
+
+          this.map.addSource('citibike', {
+            type: 'geojson',
+            data: bikeGeoJSON,
+          });
+
+          this.map.addLayer({
+            id: 'citibike-stations',
+            type: 'circle',
+            source: 'citibike',
+            paint: {
+              'circle-radius': 3,
+              'circle-color': '#27ae60',
+              'circle-opacity': 0.6,
+            },
+          });
+        }
+
+        setupCanvas() {
+          this.canvas = document.getElementById('particles-canvas');
+          this.ctx = this.canvas.getContext('2d');
+
+          const resize = () => {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+          };
+          resize();
+          window.addEventListener('resize', resize);
+
+          // start animation loop
+          this.animate();
+        }
+
+        updateMonth() {
+          const weather = this.weather[this.currentMonth];
+
+          // update display
+          document.getElementById('month-display').textContent = `${weather.month} 2024`;
+
+          // weather info
+          let weatherText = `${weather.temp}°F`;
+          if (weather.snow > 0.2) weatherText += ' ❄️ Snowy';
+          else if (weather.rain > 0.2) weatherText += ' 🌧️ Rainy';
+          else weatherText += ' ☀️ Clear';
+          document.getElementById('weather-info').textContent = weatherText;
+
+          // calculate activity based on weather and season
+          const tempFactor = (weather.temp - 32) / 50; // 0 at freezing, 1 at 82°F
+          const precipFactor = 1 - (weather.rain + weather.snow * 2); // snow worse than rain
+
+          // subway activity (higher in winter, bad weather)
+          const subwayBase = 0.6;
+          const subwayWeatherBoost = (1 - tempFactor) * 0.3; // cold = more subway
+          const subwayRainBoost = (1 - precipFactor) * 0.2; // rain/snow = more subway
+          const subwayActivity = Math.min(1, subwayBase + subwayWeatherBoost + subwayRainBoost);
+
+          // bike activity (higher in summer, good weather)
+          const bikeBase = 0.2;
+          const bikeWeatherBoost = tempFactor * 0.5; // warm = more bikes
+          const bikePrecipPenalty = precipFactor * 0.8; // rain/snow kills biking
+          const bikeActivity = Math.max(0, (bikeBase + bikeWeatherBoost) * bikePrecipPenalty);
+
+          // update station activities
+          this.updateStationActivities(subwayActivity, bikeActivity);
+
+          // update stats
+          document.getElementById('subway-active').textContent = `Subway Activity: ${Math.round(
+            subwayActivity * 100
+          )}%`;
+          document.getElementById('bike-active').textContent = `Bike Activity: ${Math.round(
+            bikeActivity * 100
+          )}%`;
+
+          // update map visuals
+          this.updateMapVisuals(subwayActivity, bikeActivity);
+
+          // create particle flows
+          this.createParticles(subwayActivity, bikeActivity);
+        }
+
+        updateStationActivities(subwayLevel, bikeLevel) {
+          // update each subway station
+          this.stations.subway.forEach((station) => {
+            let activity = subwayLevel;
+
+            // adjust by station type
+            if (station.type === 'commuter' && this.currentMonth >= 5 && this.currentMonth <= 8) {
+              activity *= 0.7; // less commuting in summer
+            }
+            if (station.type === 'tourist' && this.currentMonth >= 5 && this.currentMonth <= 8) {
+              activity *= 1.3; // more tourists in summer
+            }
+
+            station.currentActivity = activity;
+          });
+
+          // update each bike station independently
+          this.stations.citibike.forEach((station) => {
+            let activity = bikeLevel * (0.5 + station.baseActivity);
+
+            // adjust by type and season
+            if (station.type === 'park') {
+              activity *= this.currentMonth >= 4 && this.currentMonth <= 9 ? 1.5 : 0.3;
+            }
+            if (station.type === 'financial') {
+              activity *= this.currentMonth >= 5 && this.currentMonth <= 8 ? 0.5 : 1.0;
+            }
+
+            // add random variation
+            activity *= 0.8 + Math.random() * 0.4;
+
+            station.currentActivity = Math.min(1, activity);
+          });
+        }
+
+        updateMapVisuals(subwayActivity, bikeActivity) {
+          // update subway stations size
+          this.map.setPaintProperty('subway-stations', 'circle-radius', 5 + subwayActivity * 15);
+
+          // update citibike stations individually would need different approach
+          // for now, use average
+          this.map.setPaintProperty('citibike-stations', 'circle-radius', 2 + bikeActivity * 6);
+
+          // update colors based on season
+          const seasonColor = this.getSeasonColor(this.currentMonth);
+          this.map.setPaintProperty('subway-stations', 'circle-color', seasonColor.subway);
+          this.map.setPaintProperty('citibike-stations', 'circle-color', seasonColor.bike);
+        }
+
+        getSeasonColor(month) {
+          // winter (dec-feb): blue tones
+          // spring (mar-may): green tones
+          // summer (jun-aug): yellow/orange tones
+          // fall (sep-nov): red/brown tones
+
+          const colors = [
+            { subway: '#6c5ce7', bike: '#74b9ff' }, // jan - purple/blue
+            { subway: '#6c5ce7', bike: '#74b9ff' }, // feb
+            { subway: '#a29bfe', bike: '#55efc4' }, // mar - lighter purple/green
+            { subway: '#a29bfe', bike: '#55efc4' }, // apr
+            { subway: '#fd79a8', bike: '#55efc4' }, // may - pink/green
+            { subway: '#fdcb6e', bike: '#ffeaa7' }, // jun - orange/yellow
+            { subway: '#fdcb6e', bike: '#ffeaa7' }, // jul
+            { subway: '#fdcb6e', bike: '#ffeaa7' }, // aug
+            { subway: '#fab1a0', bike: '#e17055' }, // sep - peach/orange
+            { subway: '#fab1a0', bike: '#e17055' }, // oct
+            { subway: '#636e72', bike: '#b2bec3' }, // nov - gray
+            { subway: '#6c5ce7', bike: '#74b9ff' }, // dec
+          ];
+
+          return colors[month];
+        }
+
+        createParticles(subwayActivity, bikeActivity) {
+          // clear old particles
+          this.particles = [];
+
+          // create flows between active stations
+          const numFlows = Math.floor((subwayActivity + bikeActivity) * 50);
+
+          for (let i = 0; i < numFlows; i++) {
+            const isSubway = Math.random() < subwayActivity / (subwayActivity + bikeActivity);
+
+            let origin, destination;
+
+            if (isSubway && this.stations.subway.length > 1) {
+              origin =
+                this.stations.subway[Math.floor(Math.random() * this.stations.subway.length)];
+              destination =
+                this.stations.subway[Math.floor(Math.random() * this.stations.subway.length)];
+            } else if (this.stations.citibike.length > 1) {
+              // pick active citibike stations
+              const activeStations = this.stations.citibike.filter((s) => s.currentActivity > 0.1);
+              if (activeStations.length > 1) {
+                origin = activeStations[Math.floor(Math.random() * activeStations.length)];
+                destination = activeStations[Math.floor(Math.random() * activeStations.length)];
+              }
+            }
+
+            if (origin && destination && origin !== destination) {
+              this.particles.push({
+                x: origin.lon,
+                y: origin.lat,
+                targetX: destination.lon,
+                targetY: destination.lat,
+                progress: 0,
+                speed: 0.01 + Math.random() * 0.02,
+                type: isSubway ? 'subway' : 'bike',
+                size: isSubway ? 4 : 2,
+              });
+            }
+          }
+
+          document.getElementById(
+            'particle-count'
+          ).textContent = `Active Flows: ${this.particles.length}`;
+        }
+
+        animate() {
+          // clear canvas
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+          // update and draw particles
+          this.particles = this.particles.filter((particle) => {
+            particle.progress += particle.speed;
+
+            if (particle.progress >= 1) {
+              return false; // remove completed particles
+            }
+
+            // interpolate position
+            const currentLon = particle.x + (particle.targetX - particle.x) * particle.progress;
+            const currentLat = particle.y + (particle.targetY - particle.y) * particle.progress;
+
+            // convert to screen coordinates
+            const point = this.map.project([currentLon, currentLat]);
+
+            // draw particle
+            this.ctx.beginPath();
+            this.ctx.arc(point.x, point.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fillStyle =
+              particle.type === 'subway' ? 'rgba(155, 89, 182, 0.6)' : 'rgba(39, 174, 96, 0.6)';
+            this.ctx.fill();
+
+            return true;
+          });
+
+          // recreate particles if needed
+          if (this.particles.length < 20 && this.isPlaying) {
+            const weather = this.weather[this.currentMonth];
+            const tempFactor = (weather.temp - 32) / 50;
+            const precipFactor = 1 - (weather.rain + weather.snow * 2);
+
+            const subwayActivity = Math.min(
+              1,
+              0.6 + (1 - tempFactor) * 0.3 + (1 - precipFactor) * 0.2
+            );
+            const bikeActivity = Math.max(0, (0.2 + tempFactor * 0.5) * precipFactor);
+
+            this.createParticles(subwayActivity, bikeActivity);
+          }
+
+          requestAnimationFrame(() => this.animate());
+        }
+
+        bindControls() {
+          // month slider
+          document.getElementById('month-slider').addEventListener('input', (e) => {
+            this.currentMonth = parseInt(e.target.value);
+            this.updateMonth();
+          });
+
+          // play button
+          document.getElementById('play-btn').addEventListener('click', () => {
+            this.isPlaying = true;
+            this.playYear();
+          });
+
+          // pause button
+          document.getElementById('pause-btn').addEventListener('click', () => {
+            this.isPlaying = false;
+          });
+        }
+
+        playYear() {
+          if (!this.isPlaying) return;
+
+          this.currentMonth = (this.currentMonth + 1) % 12;
+          document.getElementById('month-slider').value = this.currentMonth;
+          this.updateMonth();
+
+          setTimeout(() => this.playYear(), 1000); // 1 second per month
+        }
+      }
+
+      // start the app
+      const app = new NYCSeasonalFlow();
+    </script>
+  </body>
+</html>
